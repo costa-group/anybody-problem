@@ -1,19 +1,21 @@
 pragma circom 2.1.6;
 
+include "buses.circom";
+
 function getX(body) {
-    return body[0];
+  return body.position.x;
 }
 function getY(body) {
-  return body[1];
+  return body.position.y;
 }
 function getVx(body) {
-  return body[2];
+  return body.velocity.x;
 }
 function getVy(body) {
-  return body[3];
+  return body.velocity.y;
 }
 function getMass(body) {
-  return body[4];
+  return body.mass;
 }
 
 function maxBits(n) {

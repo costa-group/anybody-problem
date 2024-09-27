@@ -54,11 +54,12 @@ template CalculateForce() {
 
   // log("GScaled", GScaled);
 
-  signal input in_bodies[2][5];
+  Body input in_bodies[2];
   var in_bodiesPositionXMaxBits = windowWidthScaledMaxBits;
-  signal output out_forces[2][2]; // maxBit: 64 (maxNum: 10_400_000_000_000_000_000)
-  // type is an array where [n][v] such that n is whether the vector is negative or not 
-  // (0 not negative, 1 is negative) and v is the absolute value of the vector
+  Force output out_forces; // maxBit: 64 (maxNum: 10_400_000_000_000_000_000)
+  // type is a bus where x_unsigned and y_unsigned are the coordinates of the
+  // vector's absolute value and sign_x, sign_y indicate whether x or y are negative
+  // or not respectively (0 not negative, 1 is negative)
 
  // NOTE: this is 200**2 so we have to square the scaling factor too
   signal minDistanceScaled <== (minDistance ** 2) * (scalingFactor ** 2); // maxBits: 36 (maxNum: 40_000_000_000)
@@ -194,8 +195,9 @@ template CalculateForce() {
   // NOTE: isZero handles overflow bit values correctly
   isZero3.in <== dxAbs + dx; // maxBits:  maxBits: 21 (maxNum: 2_000_000)
   // log("isZero3", dxAbs + dx, isZero3.out);
-  out_forces[0][0] <== isZero3.out; // isZero is 1 when dx is negative
-  out_forces[0][1] <== forceXunsigned; // maxBits 64 (maxNum: 10_400_000_000_000_000_000)
+  out_forces.sign_x <== isZero3.out; // isZero is 1 when dx is negative
+  out_forces.x_unsigned <== forceXunsigned; // maxBits 64 (maxNum: 10_400_000_000_000_000_000)
+  out_forces.x_unsigned.maxvalue = 10400000000000000000;
 
   signal forceYnum <== dyAbs * forceMag_numerator; // maxBits:64 (maxNum: 10_400_000_000_000_000_000)
   // log("forceYnum", forceYnum);
@@ -213,6 +215,7 @@ template CalculateForce() {
   isZero4.in <== dyAbs + dy; // maxBits: 255 = max(37, 254) + 1
 
   // log("forceY", forceY);
-  out_forces[1][0] <== isZero4.out;
-  out_forces[1][1] <== forceYunsigned; // maxBits 64 (maxNum: 10_400_000_000_000_000_000)
+  out_forces.sign_y <== isZero4.out;
+  out_forces.y_unsigned <== forceYunsigned; // maxBits 64 (maxNum: 10_400_000_000_000_000_000)
+  out_forces.y_unsigned.maxvalue = 10400000000000000000;
 }

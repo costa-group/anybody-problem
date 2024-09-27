@@ -2,12 +2,10 @@ pragma circom 2.1.6;
 
 include "approxMath.circom";
 include "helpers.circom";
+include "buses.circom";
 
 template GetDistance(n) {
-  signal input x1; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
-  signal input y1; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
-  signal input x2; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
-  signal input y2; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
+  Vector input v1, v2; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
   var scalingFactorFactor = 3;
   var scalingFactor = 10 ** scalingFactorFactor;
   var windowWidth = 1000;
@@ -17,14 +15,14 @@ template GetDistance(n) {
 
   // signal dx <== x2 - x1;
   component absoluteValueSubtraction = AbsoluteValueSubtraction(n);
-  absoluteValueSubtraction.in[0] <== x1; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
-  absoluteValueSubtraction.in[1] <== x2; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
+  absoluteValueSubtraction.in[0] <== v1.x; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
+  absoluteValueSubtraction.in[1] <== v2.x; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
   signal dxAbs <== absoluteValueSubtraction.out; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
 
   // signal dy <== y2 - y1;
   component absoluteValueSubtraction2 = AbsoluteValueSubtraction(n);
-  absoluteValueSubtraction2.in[0] <== y1; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
-  absoluteValueSubtraction2.in[1] <== y2; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
+  absoluteValueSubtraction2.in[0] <== v1.y; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
+  absoluteValueSubtraction2.in[1] <== v2.y; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
   signal dyAbs <== absoluteValueSubtraction2.out; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
 
   signal dxs <== dxAbs * dxAbs; // maxBits: 40 = 20 * 2 (maxNum: 1_000_000_000_000)
