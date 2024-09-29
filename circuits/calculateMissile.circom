@@ -27,13 +27,13 @@ For the purpose of legibility, the y value is stored as a positve, but treated a
 */
 
 template CalculateMissile() {
-  signal input in_missile;
+  Missile input in_missile;
   // log("in_missile[0]", in_missile[0]);
   // log("in_missile[1]", in_missile[1]);
   // log("in_missile[2]", in_missile[2]);
   // log("in_missile[3]", in_missile[3]);
   // log("in_missile[4]", in_missile[4]);
-  signal output out_missile;
+  Missile output out_missile;
 
 
   // NOTE: scalingFactorFactor appears in calculateForce, forceAccumulator as well
@@ -135,10 +135,15 @@ template CalculateMissile() {
   muxY.s <== isZeroY.out;
 
   out_missile.position.x <== new_pos.x; // maxBits: 20 (maxNum: 1_000_000)
+  out_missile.position.x.maxvalue = windowWidthScaled;
   out_missile.position.y <== new_pos.y; // maxBits: 20 (maxNum: 1_000_000)
+  out_missile.position.y.maxvalue = windowWidthScaled;
   out_missile.velocity.x <== in_missile.velocity.x; // maxBits: 15 (maxNum: 30_000)
+  out_missile.velocity.x.maxvalue = maxMissileVectorScaled;
   out_missile.velocity.y <== in_missile.velocity.y; // maxBits: 15 (maxNum: 30_000)
+  out_missile.valocity.y.maxvalue = maxMissileVectorScaled;
   out_missile.radius <== muxY.out;
+  out_missile.radius.maxvalue = missileLimit;
 
   // log("out_missile[0]", out_missile[0]);
   // log("out_missile[1]", out_missile[1]);

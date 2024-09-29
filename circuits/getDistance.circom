@@ -11,17 +11,21 @@ template GetDistance(n) {
   var windowWidth = 1000;
   var windowWidthScaled = windowWidth * scalingFactor;
   var positionMax = windowWidthScaled;
-  signal output distance;
+  signal output {maxvalue} distance;
 
   // signal dx <== x2 - x1;
   component absoluteValueSubtraction = AbsoluteValueSubtraction(n);
+  assert(v1.x.maxvalue == windowWidthScaled);
   absoluteValueSubtraction.in[0] <== v1.x; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
+  assert(v2.x.maxvalue == windowWidthScaled);
   absoluteValueSubtraction.in[1] <== v2.x; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
   signal dxAbs <== absoluteValueSubtraction.out; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
 
   // signal dy <== y2 - y1;
   component absoluteValueSubtraction2 = AbsoluteValueSubtraction(n);
+  assert(v1.y.maxvalue == windowWidthScaled);
   absoluteValueSubtraction2.in[0] <== v1.y; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
+  assert(v2.y.maxvalue == windowWidthScaled);
   absoluteValueSubtraction2.in[1] <== v2.y; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
   signal dyAbs <== absoluteValueSubtraction2.out; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
 
@@ -37,6 +41,7 @@ template GetDistance(n) {
   component sqrt = Sqrt(distanceSquaredMax);
   sqrt.squaredValue <== distanceSquared;
   distance <== sqrt.root;
+  distance.maxvalue = 1414214;
 
   // // NOTE: confirm this is correct
   // distance <-- approxSqrt(distanceSquared); // maxBits: 21 (maxNum: 1_414_214) ~= 41 / 2 + 2

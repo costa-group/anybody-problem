@@ -67,41 +67,41 @@ template CalculateForce() {
   var minDistanceScaledMaxBits = maxBits(minDistanceScaledMax);
   // NOTE: minDistanceScaled is maximum of 
   // log("minDistanceScaled", minDistanceScaled);
-  var body1_position_x = getX(in_bodies[0]); // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
-  var body1_position_xMaxBits = windowWidthScaledMaxBits;
+  assert(in_bodies[0].position.x.maxvalue == windowWidthScaled);
+  var body1_position_xMaxBits = windowWidthScaledMaxBits; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
   // log("body1_position_x", body1_position_x);
-  var body1_position_y = getY(in_bodies[0]); // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
-  var body1_position_yMaxBits = windowWidthScaledMaxBits;
+  assert(in_bodies[0].position.y.maxvalue == windowWidthScaled);
+  var body1_position_yMaxBits = windowWidthScaledMaxBits; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
   // log("body1_position_y", body1_position_y);
 
   // NOTE: maximum radius currently 32
-  var body1_radius = getMass(in_bodies[0]); // maxBits: 15 = numBits(32 * scalingFactor) (maxNum: 32_000)
-  var body1_radiusMaxBits = maxRadiusScaledMaxBits;
-  var body2_position_x = getX(in_bodies[1]); // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
-  var body2_position_xMaxBits = windowWidthScaledMaxBits;
+  assert(in_bodies[0].mass.maxvalue == 32 * scalingFactor);
+  var body1_radiusMaxBits = maxRadiusScaledMaxBits; // maxBits: 15 = numBits(32 * scalingFactor) (maxNum: 32_000)
+  assert(in_bodies[1].position.x.maxvalue == windowWidthScaled);
+  var body2_position_xMaxBits = windowWidthScaledMaxBits; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
   // log("body2_position_x", body2_position_x);
-  var body2_position_y = getY(in_bodies[1]); // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
-  var body2_position_yMaxBits = windowWidthScaledMaxBits;
+  assert(in_bodies[1].position.y.maxvalue == windowWidthScaled);
+  var body2_position_yMaxBits = windowWidthScaledMaxBits; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
   // log("body2_position_y", body2_position_y);
-  
-  // NOTE: maximum radius currently 32
-  var body2_radius = getMass(in_bodies[1]); // maxBits: 15 = numBits(32 * scalingFactor) (maxNum: 32_000)
-  var body2_radiusMaxBits = maxRadiusScaledMaxBits;
 
-  signal dx <== body2_position_x - body1_position_x; // maxBits: 254 because it can be negative
+  // NOTE: maximum radius currently 32
+  assert(in_bodies[1].mass.maxvalue == 32 * scalingFactor);
+  var body2_radiusMaxBits = maxRadiusScaledMaxBits; // maxBits: 15 = numBits(32 * scalingFactor) (maxNum: 32_000)
+
+  signal dx <== in_bodies[1].position.x - in_bodies[0].position.x; // maxBits: 254 because it can be negative
 
   var max = getBiggest([body1_position_xMaxBits, body2_position_xMaxBits], 2);
   component absoluteValueSubtraction = AbsoluteValueSubtraction(max);
-  absoluteValueSubtraction.in[0] <== body1_position_x; // maxBits: 20 (maxNum: 1_000_000)
-  absoluteValueSubtraction.in[1] <== body2_position_x; // maxBits: 20 (maxNum: 1_000_000)
+  absoluteValueSubtraction.in[0] <== in_bodies[0].position.x; // maxBits: 20 (maxNum: 1_000_000)
+  absoluteValueSubtraction.in[1] <== in_bodies[1].position.x; // maxBits: 20 (maxNum: 1_000_000)
   signal dxAbs <== absoluteValueSubtraction.out; // maxBits: 20 (maxNum: 1_000_000)
   var dxAbsMax = windowWidthScaled;
 
-  signal dy <== body2_position_y - body1_position_y; // maxBits: 254 because it can be negative
+  signal dy <== in_bodies[1].position.y - in_bodies[0].position.y; // maxBits: 254 because it can be negative
   var max2 = getBiggest([body1_position_yMaxBits, body2_position_yMaxBits], 2);
   component absoluteValueSubtraction2 = AbsoluteValueSubtraction(max2);
-  absoluteValueSubtraction2.in[0] <== body1_position_y; // maxBits: 20 (maxNum: 1_000_000)
-  absoluteValueSubtraction2.in[1] <== body2_position_y; // maxBits: 20 (maxNum: 1_000_000)
+  absoluteValueSubtraction2.in[0] <== in_bodies[0].position.y; // maxBits: 20 (maxNum: 1_000_000)
+  absoluteValueSubtraction2.in[1] <== in_bodies[1].position.y; // maxBits: 20 (maxNum: 1_000_000)
   signal dyAbs <== absoluteValueSubtraction2.out; // maxBits: 20 (maxNum: 1_000_000)
   var dyAbsMax = windowWidthScaled;
   // log("dx", dx);
@@ -149,11 +149,11 @@ template CalculateForce() {
   var distanceMaxBits = maxBits(distanceMax);
 
  // NOTE: this could be tweaked as a variable for "liveliness" of bodies
-  signal bodies_sum_tmp <== (body1_radius + body2_radius) * 4; // maxBits: 18 (maxNum: 256_000)
+  signal bodies_sum_tmp <== (in_bodies[0].mass + in_bodies[1].mass) * 4; // maxBits: 18 (maxNum: 256_000)
 
   // bodies_sum is 0 if either body1_radius or body2_radius is 0
   component isZero = IsZero();
-  isZero.in <== body1_radius; // maxBits: 15
+  isZero.in <== in_bodies[0].mass; // maxBits: 15
 
   component myMux2 = Mux1();
   myMux2.c[0] <== bodies_sum_tmp; // maxBits: 18 (maxNum: 256_000)
@@ -161,7 +161,7 @@ template CalculateForce() {
   myMux2.s <== isZero.out;
 
   component isZero2 = IsZero();
-  isZero2.in <== body2_radius; // maxBits: 15
+  isZero2.in <== in_bodies[1].mass; // maxBits: 15
 
   component myMux3 = Mux1();
   myMux3.c[0] <== myMux2.out; // maxBits: 18 (maxNum: 256_000)

@@ -61,12 +61,18 @@ template ForceAccumulator(totalBodies) { // max 10 = maxBits: 4
     // Maximum accumulated value must be removed before final value is returned.
     var maximum_accumulated_possible = 468000000000000000000; // maxBits: 69 (maxNum: 468_000_000_000_000_000_000) = out_forces * totalIterations
     for (var i = 0; i < totalBodies; i++) {
+      assert(bodies[i].position.x.maxvalue == windowWidthScaled);
+      assert(bodies[i].position.y.maxvalue == windowWidthScaled);
+      assert(bodies[i].velocity.x.maxvalue == windowWidthScaled);
+      assert(bodies[i].velocity.y.maxvalue == windowWidthScaled);
+      assert(bodies[i].mass.maxvalue == 32000);
       accumulated_body_forces[i][0] = maximum_accumulated_possible; // maxBits: 69 (maxNum: 468_000_000_000_000_000_000) = out_forces * totalIterations
       accumulated_body_forces[i][1] = maximum_accumulated_possible; // maxBits: 69 (maxNum: 468_000_000_000_000_000_000) = out_forces * totalIterations
     }
     for (var i = 0; i < totalBodies; i++) {
       // radius of body doesn't change
-      out_bodies[i].radius <== bodies[i].radius; // maxBits: 15 (maxNum: 32_000)
+      out_bodies[i].mass <== bodies[i].mass; // maxBits: 15 (maxNum: 32_000)
+      out_bodies[i].mass.maxvalue = 32000;
       for (var j = i+1; j < totalBodies; j++) {
         // calculate the force between i and j
         calculateForceComponent[ii] = CalculateForce();
@@ -178,6 +184,7 @@ template ForceAccumulator(totalBodies) { // max 10 = maxBits: 4
       // log("vectorLowerLimiterX[i].out", vectorLowerLimiterX[i].out);
       // log("out_bodies[i][3]", "vectorLowerLimiterX[i].out - maxVectorScaled", vectorLowerLimiterX[i].out - maxVectorScaled);
       out_bodies[i].velocity.x <== vectorLowerLimiterX[i].out - maxVectorScaled; // maxBits: 15 (maxNum: 20_000)
+      out_bodies[i].velocity.x.maxvalue = maxVectorScaled;
 
       // NOTE: same as above
       vectorLimiterY[i] = Limiter(71);
@@ -201,6 +208,7 @@ template ForceAccumulator(totalBodies) { // max 10 = maxBits: 4
       // log("vectorLowerLimiterY[i].out", vectorLowerLimiterY[i].out);
       // log("out_bodies[i][3]", "vectorLowerLimiterY[i].out - maxVectorScaled", vectorLowerLimiterY[i].out - maxVectorScaled);
       out_bodies[i].velocity.y <== vectorLowerLimiterY[i].out - maxVectorScaled; // maxBits: 15 (maxNum: 20_000)
+      out_bodies[i].velocity.y.maxvalue = maxVectorScaled;
 
 
       // need to limit position so plane loops off edges
@@ -253,6 +261,7 @@ template ForceAccumulator(totalBodies) { // max 10 = maxBits: 4
       // if positionLimiterX.out !== positionLimiterX.in, then out_bodies[i][0] <== positionLimiterX.out
       // else, out_bodies[i][0] <== positionLowerLimiterX.out
       out_bodies[i].position.x <== muxX[i].out;
+      out_bodies[i].position.x.maxvalue = windowWidthScaled;
   
 
 
@@ -281,6 +290,7 @@ template ForceAccumulator(totalBodies) { // max 10 = maxBits: 4
       // if positionLimiterX.out !== positionLimiterX.in, then out_bodies[i][0] <== positionLimiterX.out
       // else, out_bodies[i][0] <== positionLowerLimiterX.out
       out_bodies[i].position.y <== muxY[i].out;
+      out_bodies[i].position.y.maxvalue = windowWidthScaled;
     }
     // log("out_bodies[0][0]", out_bodies[0][0]);
     // log("out_bodies[0][1]", out_bodies[0][1]);

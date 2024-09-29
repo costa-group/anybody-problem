@@ -30,18 +30,24 @@ template DetectCollision(totalBodies) {
   //  log("missile x2", tmp_missiles[i][0]);
   //  log("missile y2", tmp_missiles[i][1]);
     getDistance[i] = GetDistance(20); // n = 20 but inside GetDistance n = 2 * n + 1 and returns maxBits 21
+    assert(bodies[i].x.maxvalue == windowWidthScaled);
     getDistance[i].x1 <== bodies[i].x; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
+    assert(bodies[i].y.maxvalue == windowWidthScaled);
     getDistance[i].y1 <== bodies[i].y; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
+    assert(tmp_missiles[i].x.maxvalue == windowWidthScaled);
     getDistance[i].x2 <== tmp_missiles[i].x; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
+    assert(tmp_missiles[i].y.maxvalue == windowWidthScaled);
     getDistance[i].y2 <== tmp_missiles[i].y; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
 
     // check whether the radius of the missile is 0, this means there is currently no missile
     isZero[i] = IsZero();
+    assert(tmp_missiles[i].radius.maxvalue == 13 * scalingFactor);
     isZero[i].in <== tmp_missiles[i].radius;
 
     // if there is no missile (isZeroOut == 1), then set distanceMin to 0. Even if they are exact same coordinates the distance will be 0 and 0 < 0 is false
     distanceMinMux[i] = Mux1();
     // NOTE: distance is 2 x radius
+    assert(bodies[i].radius.maxvalue == 13 * scalingFactor);
     distanceMinMux[i].c[0] <== bodies[i].radius * 2; // maxBits: 15 = numBits(2 * 13 * scalingFactor) (maxNum: 26_000)
     distanceMinMux[i].c[1] <== 0;
     distanceMinMux[i].s <== isZero[i].out;
@@ -62,6 +68,7 @@ template DetectCollision(totalBodies) {
     out_bodies[i].x <== bodies[i].x;
     out_bodies[i].y <== bodies[i].y;
     out_bodies[i].radius <== mux[i].out;
+    out_bodies[i].radius.maxvalue = 13 * scalingFactor;
     // log("out_bodies[i][0]", out_bodies[i][0]);
     // log("out_bodies[i][1]", out_bodies[i][1]);
     // log("out_bodies[i][2]", out_bodies[i][2]);
@@ -81,9 +88,11 @@ template DetectCollision(totalBodies) {
     tmp_missiles[i + 1].x <== missile.x;
     tmp_missiles[i + 1].y <== missile.y;
     tmp_missiles[i + 1].radius <== mux2[i].out;
+    tmp_missiles[i + 1].radius.maxvalue = tmp_missiles[i].radius.maxvalue;
   }
 
   out_missile.x <== tmp_missiles[totalBodies].x; // last iteration's x
   out_missile.y <== tmp_missiles[totalBodies].y; // last iteration's y
   out_missile.radius <== tmp_missiles[totalBodies].radius; // last iteration's radius
+  out_missile.radius.maxvalue = tmp_missiles[totalBodies].radius.maxvalue; // last iteration's radius
 }

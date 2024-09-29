@@ -1,16 +1,16 @@
 pragma circom 2.1.6;
 
 bus Vector {
-  signal x, y;
+  signal {maxvalue} x, y;
 }
 
 bus Body {
   Vector position, velocity;
-  signal mass;
+  signal {maxvalue} mass;
 }
 
 bus BodyReduced {
-    signal x, y, radius;
+    signal {maxvalue} x, y, radius;
 }
 
 bus Force {
@@ -20,9 +20,9 @@ bus Force {
 
 bus Missile {
   Vector position, velocity;
-  signal radius;
+  signal {maxvalue} radius;
 }
 
 bus MissileReduced {
-    signal x, y, radius;
+    signal {maxvalue} x, y, radius;
 }
