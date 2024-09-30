@@ -118,10 +118,10 @@ template StepState(totalBodies, steps) {
     // tmp_bodies[i + 1] <== detectCollision[i].out_bodies;
     // ALSO check whether each radius == 0, if so then the totalRadius of all of them is 0
     for (var j = 0; j < totalBodies; j++) {
-      tmp_body[j].position.x = detectCollision[i].out_bodies[j].x; // x
-      tmp_body[j].position.y = detectCollision[i].out_bodies[j].y; // y
-      tmp_body[j].velocity = forceAccumulator[i].out_bodies[j].velocity; // xv and yv
-      tmp_body[j].mass = detectCollision[i].out_bodies[j].radius; // radius
+      tmp_body[j].position.x <== detectCollision[i].out_bodies[j].x; // x
+      tmp_body[j].position.y <== detectCollision[i].out_bodies[j].y; // y
+      tmp_body[j].velocity <== forceAccumulator[i].out_bodies[j].velocity; // xv and yv
+      tmp_body[j].mass <== detectCollision[i].out_bodies[j].radius; // radius
     }
 
     // TODO: decide whether to include this, body being alive is currently
@@ -192,11 +192,11 @@ template StepState(totalBodies, steps) {
     // detectCollision[i].out_missile[2]
     // );
 
-    tmp_missile.position.x = mux[i].out[0];
-    tmp_missile.position.y = mux[i].out[1];
-    tmp_missile.velocity.x = mux[i].out[2];
-    tmp_missile.velocity.y = mux[i].out[3];
-    tmp_missile.radius = mux[i].out[4];
+    tmp_missile.position.x <== mux[i].out[0];
+    tmp_missile.position.y <== mux[i].out[1];
+    tmp_missile.velocity.x <== mux[i].out[2];
+    tmp_missile.velocity.y <== mux[i].out[3];
+    tmp_missile.radius <== mux[i].out[4];
 
   }
   time <== steps - time_tmp;

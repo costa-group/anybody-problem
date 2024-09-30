@@ -15,6 +15,16 @@ template DetectCollision(totalBodies) {
   tmp_missiles[0].y <== missile.y;
   tmp_missiles[0].radius <== missile.radius;
 
+
+    // NOTE: scalingFactorFactor appears in calculateForce, forceAccumulator as well
+  var scalingFactorFactor = 3; // maxBits: 2
+  var scalingFactor = 10**scalingFactorFactor; // maxBits: 10 (maxNum: 1_000)
+
+
+  // NOTE: windowWidthScaled appears in forceAccumulator, calculateForce as well and needs to match
+  var windowWidth = 1000; // maxBits: 10
+  var windowWidthScaled = windowWidth * scalingFactor; // maxBits: 20 (maxNum: 1_000_000)
+
   component getDistance[totalBodies];
   component isZero[totalBodies];
   component distanceMinMux[totalBodies];
@@ -31,13 +41,13 @@ template DetectCollision(totalBodies) {
   //  log("missile y2", tmp_missiles[i][1]);
     getDistance[i] = GetDistance(20); // n = 20 but inside GetDistance n = 2 * n + 1 and returns maxBits 21
     assert(bodies[i].x.maxvalue == windowWidthScaled);
-    getDistance[i].x1 <== bodies[i].x; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
+    getDistance[i].v1.x <== bodies[i].x; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
     assert(bodies[i].y.maxvalue == windowWidthScaled);
-    getDistance[i].y1 <== bodies[i].y; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
+    getDistance[i].v1.y <== bodies[i].y; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
     assert(tmp_missiles[i].x.maxvalue == windowWidthScaled);
-    getDistance[i].x2 <== tmp_missiles[i].x; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
+    getDistance[i].v2.x <== tmp_missiles[i].x; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
     assert(tmp_missiles[i].y.maxvalue == windowWidthScaled);
-    getDistance[i].y2 <== tmp_missiles[i].y; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
+    getDistance[i].v2.y <== tmp_missiles[i].y; // maxBits: 20 (maxNum: 1_000_000) = windowWidthScaled
 
     // check whether the radius of the missile is 0, this means there is currently no missile
     isZero[i] = IsZero();

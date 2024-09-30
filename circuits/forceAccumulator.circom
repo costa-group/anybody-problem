@@ -78,7 +78,7 @@ template ForceAccumulator(totalBodies) { // max 10 = maxBits: 4
         calculateForceComponent[ii] = CalculateForce();
         calculateForceComponent[ii].in_bodies[0] <== bodies[i];
         calculateForceComponent[ii].in_bodies[1] <== bodies[j];
-        force = calculateForceComponent[ii].out_forces; // maxBits: 64 (maxNum: 10_400_000_000_000_000_000)
+        force <== calculateForceComponent[ii].out_forces; // maxBits: 64 (maxNum: 10_400_000_000_000_000_000)
         // accumulate the value of the force on body i and body j
         // log("in_bodies[0] = ", i);
         // log("in_bodies[1] = ", j);

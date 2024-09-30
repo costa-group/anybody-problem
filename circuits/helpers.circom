@@ -1,7 +1,7 @@
 pragma circom 2.1.6;
 
 include "buses.circom";
-
+/*
 function getX(body) {
   return body.position.x;
 }
@@ -17,7 +17,7 @@ function getVy(body) {
 function getMass(body) {
   return body.mass;
 }
-
+*/
 function maxBits(n) {
   var i = 0;
    while(n > 0) {

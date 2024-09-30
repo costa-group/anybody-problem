@@ -141,7 +141,7 @@ template CalculateMissile() {
   out_missile.velocity.x <== in_missile.velocity.x; // maxBits: 15 (maxNum: 30_000)
   out_missile.velocity.x.maxvalue = maxMissileVectorScaled;
   out_missile.velocity.y <== in_missile.velocity.y; // maxBits: 15 (maxNum: 30_000)
-  out_missile.valocity.y.maxvalue = maxMissileVectorScaled;
+  out_missile.velocity.y.maxvalue = maxMissileVectorScaled;
   out_missile.radius <== muxY.out;
   out_missile.radius.maxvalue = missileLimit;
 
