@@ -211,10 +211,9 @@ contract ExternalMetadata is Ownable {
     function getBestTimeEncoded(
         uint256 date
     ) public view returns (string memory) {
-        uint256 bestRunId = AnybodyProblem(anybodyProblem).fastestByDay(
-            date,
+        uint256 bestRunId = AnybodyProblem(anybodyProblem).fastestByDay(date)[
             0
-        );
+        ];
 
         AnybodyProblem.Level[] memory levels = AnybodyProblem(anybodyProblem)
             .getLevelsData(bestRunId);
@@ -240,14 +239,17 @@ contract ExternalMetadata is Ownable {
     function getName(uint256 date) public pure returns (string memory) {
         (uint year, uint month, uint day) = BokkyPooBahsDateTimeLibrary
             .timestampToDate(date);
+
+        string memory monthName = month == 1 ? "January" : month == 2 ? "February" : month == 3 ? "March" : month == 4 ? "April" : month == 5 ? "May" : month == 6 ? "June" : month == 7 ? "July" : month == 8 ? "August" : month == 9 ? "September" : month == 10 ? "October" : month == 11 ? "November" : "December";
+
         return
             string(
                 abi.encodePacked(
-                    StringsExtended.toString(year),
-                    '-',
-                    StringsExtended.toString(month),
-                    '-',
-                    StringsExtended.toString(day)
+                    monthName,
+                    " ",
+                    StringsExtended.toString(day),
+                    ", ",
+                    StringsExtended.toString(year)
                 )
             );
     }
@@ -558,13 +560,14 @@ contract ExternalMetadata is Ownable {
         uint256 date,
         uint256 placeIndex
     ) public view returns (address, string memory sec) {
-        uint256 runId = AnybodyProblem(anybodyProblem).fastestByDay(
-            date,
+        uint256 runId = AnybodyProblem(anybodyProblem).fastestByDay(date)[
             placeIndex
+        ];
+        AnybodyProblem.Run memory run = AnybodyProblem(anybodyProblem).runs(
+            runId
         );
-        (address player, , uint256 timeCompleted, , ) = AnybodyProblem(
-            anybodyProblem
-        ).runs(runId);
+        address player = run.owner;
+        uint256 timeCompleted = run.accumulativeTime;
 
         uint256 precision = 1000;
         uint256 fps = 25;
