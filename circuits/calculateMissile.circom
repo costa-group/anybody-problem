@@ -1,5 +1,6 @@
 pragma circom 2.1.6;
 
+include "buses.circom";
 
 /*
 Notes on CalculateMissile()
@@ -26,13 +27,13 @@ For the purpose of legibility, the y value is stored as a positve, but treated a
 */
 
 template CalculateMissile() {
-  signal input in_missile[5];
+  Missile input in_missile;
   // log("in_missile[0]", in_missile[0]);
   // log("in_missile[1]", in_missile[1]);
   // log("in_missile[2]", in_missile[2]);
   // log("in_missile[3]", in_missile[3]);
   // log("in_missile[4]", in_missile[4]);
-  signal output out_missile[5];
+  Missile output out_missile;
 
 
   // NOTE: scalingFactorFactor appears in calculateForce, forceAccumulator as well
@@ -54,7 +55,7 @@ template CalculateMissile() {
   // vy is always negative
   // the sum of the absolute values of vx and vy must be less than missileLimit
   // according to the triangle inequality threorem that limits the magnitude of the vector
-  signal mustBeLessThanMissileLimit <== in_missile[2] + in_missile[3];
+  signal mustBeLessThanMissileLimit <== in_missile.velocity.x + in_missile.velocity.y;
   // log("in_missile[2]", in_missile[2]);
   // log("in_missile[3]", in_missile[3]);
   // log("mustBeLessThanMissileLimit", mustBeLessThanMissileLimit);
@@ -67,22 +68,22 @@ template CalculateMissile() {
 
   // ensure y is negative
   component isYNegative = LessEqThan(165);
-  isYNegative.in[0] <== in_missile[3];
+  isYNegative.in[0] <== in_missile.velocity.y;
   isYNegative.in[1] <== maxMissileVectorScaled;
   isYNegative.out === 1;
 
   // ensure x is positive
   component isXPositive = LessEqThan(15);
-  isXPositive.in[0] <== in_missile[2];
+  isXPositive.in[0] <== in_missile.velocity.x;
   isXPositive.in[1] <== maxMissileVectorScaled;
   isXPositive.out === 1;
 
 
-  signal new_pos[2];
+  Vector new_pos;
    // position_x + vector_x
-  new_pos[0] <== in_missile[0] + in_missile[2]; // maxBits: 20 (maxNum: 1_030_000)
+  new_pos.x <== in_missile.position.x + in_missile.velocity.x; // maxBits: 20 (maxNum: 1_030_000)
    // position_y - vector_y (NOTE: vector y is stored as a positive but treated as a negative)
-  new_pos[1] <== in_missile[1] - in_missile[3]; // maxBits: 20 (maxNum: 1_030_000)
+  new_pos.y <== in_missile.position.y - in_missile.velocity.y; // maxBits: 20 (maxNum: 1_030_000)
 
 
   // log("new_pos[0]", new_pos[0]);
@@ -93,7 +94,7 @@ template CalculateMissile() {
   // log("positionLimiterX in", new_pos[0] + maxMissileVectorScaled);
   // log("positionLimiterX limit", windowWidthScaled + maxMissileVectorScaled);
   component calcMissilePositionLimiterX = Limiter(20);
-  calcMissilePositionLimiterX.in <== new_pos[0]; // maxBits: 20 (maxNum: 1_030_000)
+  calcMissilePositionLimiterX.in <== new_pos.x; // maxBits: 20 (maxNum: 1_030_000)
   calcMissilePositionLimiterX.limit <== windowWidthScaled; // maxBits: 20 (maxNum: 1_030_000)
   calcMissilePositionLimiterX.rather <== 0;
   // log("calcMissilePositionLimiterX out", calcMissilePositionLimiterX.out);
@@ -128,7 +129,7 @@ template CalculateMissile() {
   // radius should go to 0 if new x posisiton is 0 AND new x position is 0
 
   component muxXDecidesRadius = Mux1();
-  muxXDecidesRadius.c[0] <== in_missile[4];
+  muxXDecidesRadius.c[0] <== in_missile.radius;
   muxXDecidesRadius.c[1] <== 0;
   muxXDecidesRadius.s <== makeRadiusZero.out;
 
@@ -143,7 +144,7 @@ template CalculateMissile() {
   // log("positionLowerLimiterY in", new_pos[1]);
   // log("positionLowerLimiterY limit", maxMissileVectorScaled);
   component positionLowerLimiterY = LowerLimiter(20); // TODO: confirm type matches bit limit
-  positionLowerLimiterY.in <== new_pos[1] + maxMissileVectorScaled; // maxBits: 20 (maxNum: 1_030_000)
+  positionLowerLimiterY.in <== new_pos.y + maxMissileVectorScaled; // maxBits: 20 (maxNum: 1_030_000)
   positionLowerLimiterY.limit <== maxMissileVectorScaled; // maxBits: 15 (maxNum: 30_000)
   positionLowerLimiterY.rather <== 0;
   // log("positionLowerLimiterY out", positionLowerLimiterY.out);
@@ -155,11 +156,16 @@ template CalculateMissile() {
   muxY.c[1] <== 0;
   muxY.s <== isZeroY.out;
 
-  out_missile[0] <== new_pos[0]; // maxBits: 20 (maxNum: 1_000_000)
-  out_missile[1] <== new_pos[1]; // maxBits: 20 (maxNum: 1_000_000)
-  out_missile[2] <== in_missile[2]; // maxBits: 15 (maxNum: 30_000)
-  out_missile[3] <== in_missile[3]; // maxBits: 15 (maxNum: 30_000)
-  out_missile[4] <== muxY.out;
+  out_missile.position.x <== new_pos.x; // maxBits: 20 (maxNum: 1_000_000)
+  out_missile.position.x.maxvalue = windowWidthScaled;
+  out_missile.position.y <== new_pos.y; // maxBits: 20 (maxNum: 1_000_000)
+  out_missile.position.y.maxvalue = windowWidthScaled;
+  out_missile.velocity.x <== in_missile.velocity.x; // maxBits: 15 (maxNum: 30_000)
+  out_missile.velocity.x.maxvalue = maxMissileVectorScaled;
+  out_missile.velocity.y <== in_missile.velocity.y; // maxBits: 15 (maxNum: 30_000)
+  out_missile.velocity.y.maxvalue = maxMissileVectorScaled;
+  out_missile.radius <== muxY.out;
+  out_missile.radius.maxvalue = missileLimit;
 
   // log("out_missile[0]", out_missile[0]);
   // log("out_missile[1]", out_missile[1]);

@@ -9,20 +9,20 @@ include "gates.circom";
 
 template StepState(totalBodies, steps) {
   signal input address;
-  signal input bodies[totalBodies][5];
-  signal input missiles[steps + 1][3]; // just vx, vy, radius (which is 0 or 1 essentially)
-  signal input inflightMissile[5];
-  signal output outflightMissile[5];
+  Body input bodies[totalBodies];
+  MissileReduced input missiles[steps + 1]; // just vx, vy, radius (which is 0 or 1 essentially)
+  Missile input inflightMissile;
+  Missile output outflightMissile;
 
   // ensure that inflight missile is same as first missile.
   // if inflight missile is not 0, then first missile is allowed to start at a non-corner position.
   // this offers no security at the circuit level but allows the smart contract to enforce
   // when inflightMissile is allowed to be non-zero.
-  missiles[0][0] === inflightMissile[2];
-  missiles[0][1] === inflightMissile[3];
-  missiles[0][2] === inflightMissile[4];
+  missiles[0].x === inflightMissile.velocity.x;
+  missiles[0].y === inflightMissile.velocity.y;
+  missiles[0].radius === inflightMissile.radius;
 
-  var tmp_missile[5];
+  Missile tmp_missile;
 
     // NOTE: scalingFactorFactor appears in getDistance, forceAccumulator, calculateMissile, calculateForce as well
   var scalingFactorFactor = 3; // maxBits: 2
@@ -35,28 +35,27 @@ template StepState(totalBodies, steps) {
   // If there is not an inflight missile, then the starting position should be the corner
   component whatShouldStartingMissilePositionBe = MultiMux1(2);
 
-  whatShouldStartingMissilePositionBe.c[0][0] <== inflightMissile[0];
+  whatShouldStartingMissilePositionBe.c[0][0] <== inflightMissile.position.x;
   whatShouldStartingMissilePositionBe.c[0][1] <== 0;
 
-  whatShouldStartingMissilePositionBe.c[1][0] <==  inflightMissile[1];
+  whatShouldStartingMissilePositionBe.c[1][0] <==  inflightMissile.position.y;
   whatShouldStartingMissilePositionBe.c[1][1] <== windowWidthScaled;
 
   component isMissileZero = IsZero();
-  isMissileZero.in <== inflightMissile[4];
+  isMissileZero.in <== inflightMissile.radius;
 
   whatShouldStartingMissilePositionBe.s <== isMissileZero.out; // If inflight missile radius == 0, then starting position should equal corner
 
-  tmp_missile[0] = whatShouldStartingMissilePositionBe.out[0];
-  tmp_missile[1] = whatShouldStartingMissilePositionBe.out[1];
-  tmp_missile[2] = inflightMissile[2];
-  tmp_missile[3] = inflightMissile[3];
-  tmp_missile[4] = inflightMissile[4];
+  tmp_missile.position.x <== whatShouldStartingMissilePositionBe.out[0];
+  tmp_missile.position.y <== whatShouldStartingMissilePositionBe.out[1];
+  tmp_missile.velocity <== inflightMissile.velocity;
+  tmp_missile.radius <== inflightMissile.radius;
 
 
   signal preventReplay <== address * address;
 
 
-  signal output out_bodies[totalBodies][5];
+  Body output out_bodies[totalBodies];
   var time_tmp = 0;
   signal output time;
 
@@ -64,7 +63,7 @@ template StepState(totalBodies, steps) {
   component calculateMissile[steps];
   component detectCollision[steps];
   
-  var tmp_body[totalBodies][5] = bodies;
+  Body tmp_body[totalBodies] <== bodies;
 
   component mux[steps];
   component isZero[steps];
@@ -104,13 +103,13 @@ template StepState(totalBodies, steps) {
     // TODO: Ask WEI whether it's possible to skip this calculation if the radius is 0, 
     // meaning there is no missile (or at least reduce the constraints needed?)
     detectCollision[i] = DetectCollision(totalBodies);
-    detectCollision[i].missile[0] <== calculateMissile[i].out_missile[0]; // x
-    detectCollision[i].missile[1] <== calculateMissile[i].out_missile[1]; // y
-    detectCollision[i].missile[2] <== calculateMissile[i].out_missile[4]; // radius
+    detectCollision[i].missile.x <== calculateMissile[i].out_missile.position.x; // x
+    detectCollision[i].missile.y <== calculateMissile[i].out_missile.position.y; // y
+    detectCollision[i].missile.radius <== calculateMissile[i].out_missile.radius; // radius
     for  (var j = 0; j < totalBodies; j++) {
-      detectCollision[i].bodies[j][0] <== forceAccumulator[i].out_bodies[j][0]; // x
-      detectCollision[i].bodies[j][1] <== forceAccumulator[i].out_bodies[j][1]; // y
-      detectCollision[i].bodies[j][2] <== forceAccumulator[i].out_bodies[j][4]; // radius
+      detectCollision[i].bodies[j].x <== forceAccumulator[i].out_bodies[j].position.x; // x
+      detectCollision[i].bodies[j].y <== forceAccumulator[i].out_bodies[j].position.y; // y
+      detectCollision[i].bodies[j].radius <== forceAccumulator[i].out_bodies[j].mass; // radius
     }
 
 
@@ -119,11 +118,10 @@ template StepState(totalBodies, steps) {
     // tmp_bodies[i + 1] <== detectCollision[i].out_bodies;
     // ALSO check whether each radius == 0, if so then the totalRadius of all of them is 0
     for (var j = 0; j < totalBodies; j++) {
-      tmp_body[j][0] = detectCollision[i].out_bodies[j][0]; // x
-      tmp_body[j][1] = detectCollision[i].out_bodies[j][1]; // y
-      tmp_body[j][2] = forceAccumulator[i].out_bodies[j][2]; // xv
-      tmp_body[j][3] = forceAccumulator[i].out_bodies[j][3]; // yv
-      tmp_body[j][4] = detectCollision[i].out_bodies[j][2]; // radius
+      tmp_body[j].position.x <== detectCollision[i].out_bodies[j].x; // x
+      tmp_body[j].position.y <== detectCollision[i].out_bodies[j].y; // y
+      tmp_body[j].velocity <== forceAccumulator[i].out_bodies[j].velocity; // xv and yv
+      tmp_body[j].mass <== detectCollision[i].out_bodies[j].radius; // radius
     }
 
     // TODO: decide whether to include this, body being alive is currently
@@ -137,7 +135,7 @@ template StepState(totalBodies, steps) {
     // j = 1 if the first body needs to stay protected
     for (var j = 1; j < totalBodies; j++) {
       isZeroStep[i][j] = IsZero();
-      isZeroStep[i][j].in <== detectCollision[i].out_bodies[j][2]; // radius
+      isZeroStep[i][j].in <== detectCollision[i].out_bodies[j].radius; // radius
       totalRadius = totalRadius + isZeroStep[i][j].out;
     }
     // log("totalRadius", totalRadius);
@@ -152,7 +150,7 @@ template StepState(totalBodies, steps) {
     // NOTE: Check whether the missile radius is now 0 meaning that it has collided with a
     // body
     isZero[i] = IsZero();
-    isZero[i].in <== detectCollision[i].out_missile[2];
+    isZero[i].in <== detectCollision[i].out_missile.radius;
 
     // NOTE: If the missile has collided with a body or gone off screen, then the next 
     // missile should come from the missiles input instead of the current missile.
@@ -164,20 +162,20 @@ template StepState(totalBodies, steps) {
     mux[i] = MultiMux1(5);
 
     // NOTE: new missiles are hardcoded to start in x,y of the corner
-    mux[i].c[0][0] <== detectCollision[i].out_missile[0];
+    mux[i].c[0][0] <== detectCollision[i].out_missile.x;
     mux[i].c[0][1] <== 0; //missiles[i + 1][0];
 
-    mux[i].c[1][0] <== detectCollision[i].out_missile[1];
+    mux[i].c[1][0] <== detectCollision[i].out_missile.y;
     mux[i].c[1][1] <== windowWidthScaled; //missiles[i + 1][1];
 
-    mux[i].c[2][0] <== calculateMissile[i].out_missile[2]; 
-    mux[i].c[2][1] <== missiles[i + 1][0];
+    mux[i].c[2][0] <== calculateMissile[i].out_missile.velocity.x; 
+    mux[i].c[2][1] <== missiles[i + 1].x;
 
-    mux[i].c[3][0] <== calculateMissile[i].out_missile[3]; 
-    mux[i].c[3][1] <== missiles[i + 1][1];
+    mux[i].c[3][0] <== calculateMissile[i].out_missile.velocity.y; 
+    mux[i].c[3][1] <== missiles[i + 1].y;
 
-    mux[i].c[4][0] <== detectCollision[i].out_missile[2];
-    mux[i].c[4][1] <== missiles[i + 1][2];
+    mux[i].c[4][0] <== detectCollision[i].out_missile.radius;
+    mux[i].c[4][1] <== missiles[i + 1].radius;
     mux[i].s <== isZero[i].out;
     // log("if this is 1, then current missile is done (radius == 0)", isZero[i].out, 
     // 0, 
@@ -194,11 +192,11 @@ template StepState(totalBodies, steps) {
     // detectCollision[i].out_missile[2]
     // );
 
-    tmp_missile[0] = mux[i].out[0];
-    tmp_missile[1] = mux[i].out[1];
-    tmp_missile[2] = mux[i].out[2];
-    tmp_missile[3] = mux[i].out[3];
-    tmp_missile[4] = mux[i].out[4];
+    tmp_missile.position.x <== mux[i].out[0];
+    tmp_missile.position.y <== mux[i].out[1];
+    tmp_missile.velocity.x <== mux[i].out[2];
+    tmp_missile.velocity.y <== mux[i].out[3];
+    tmp_missile.radius <== mux[i].out[4];
 
   }
   time <== steps - time_tmp;
